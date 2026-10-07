@@ -1,6 +1,7 @@
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
+const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const { initDatabase, seedDatabase } = require('./database');
 
@@ -14,6 +15,7 @@ seedDatabase(db);
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'dist')));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
   secret: 'juri-secret-key-2026',
@@ -62,8 +64,10 @@ app.post('/api/login', (req, res) => {
 });
 
 app.post('/api/logout', (req, res) => {
-  req.session.destroy();
-  res.json({ success: true });
+  req.session.destroy((err) => {
+    res.clearCookie('connect.sid');
+    res.json({ success: true });
+  });
 });
 
 app.get('/api/me', (req, res) => {
@@ -75,14 +79,21 @@ app.get('/api/me', (req, res) => {
 
 // ==================== JUDGE ROUTES ====================
 
-// Get categories assigned to current judge
+// Get categories assigned to current judge with progress
 app.get('/api/judge/categories', requireAuth, (req, res) => {
+  const judgeId = req.session.user.id;
   const categories = db.prepare(`
-    SELECT c.* FROM categories c
+    SELECT c.*,
+      (SELECT COUNT(*) FROM participants WHERE category_id = c.id) as total_participants,
+      (SELECT COUNT(DISTINCT s.participant_id) 
+       FROM scores s 
+       JOIN participants p ON s.participant_id = p.id 
+       WHERE p.category_id = c.id AND s.judge_id = ?) as scored_count
+    FROM categories c
     JOIN judge_categories jc ON jc.category_id = c.id
     WHERE jc.judge_id = ?
     ORDER BY c.display_order
-  `).all(req.session.user.id);
+  `).all(judgeId, judgeId);
 
   res.json(categories);
 });
@@ -90,44 +101,121 @@ app.get('/api/judge/categories', requireAuth, (req, res) => {
 // Get participants for a category
 app.get('/api/judge/participants/:categoryId', requireAuth, (req, res) => {
   const { categoryId } = req.params;
+  const judgeId = req.session.user.id;
 
   // Check if judge is assigned to this category
   const assigned = db.prepare(`
     SELECT 1 FROM judge_categories WHERE judge_id = ? AND category_id = ?
-  `).get(req.session.user.id, categoryId);
+  `).get(judgeId, categoryId);
 
   if (!assigned && req.session.user.role !== 'admin') {
     return res.status(403).json({ error: 'Anda tidak ditugaskan ke kategori ini' });
   }
 
+  const category = db.prepare('SELECT * FROM categories WHERE id = ?').get(categoryId);
   const participants = db.prepare(`
-    SELECT p.*, 
-      COALESCE(
-        (SELECT GROUP_CONCAT(s.score) FROM scores s 
-         JOIN sub_criteria sc ON s.sub_criteria_id = sc.id 
-         WHERE s.participant_id = p.id AND s.judge_id = ?),
-        ''
-      ) as has_scores
-    FROM participants p
+    SELECT p.* FROM participants p
     WHERE p.category_id = ?
     ORDER BY p.number
-  `).all(req.session.user.id, categoryId);
+  `).all(categoryId);
 
-  // Check if judge has scored each participant
+  // Load criteria for weighted calculations
+  const criteria = db.prepare('SELECT * FROM criteria ORDER BY display_order').all();
+
   const participantsWithStatus = participants.map(p => {
-    const scoreCount = db.prepare(`
-      SELECT COUNT(*) as count FROM scores 
-      WHERE judge_id = ? AND participant_id = ?
-    `).get(req.session.user.id, p.id);
+    const scores = db.prepare(`
+      SELECT s.score, sc.criteria_id, c.weight, c.max_score
+      FROM scores s
+      JOIN sub_criteria sc ON s.sub_criteria_id = sc.id
+      JOIN criteria c ON sc.criteria_id = c.id
+      WHERE s.judge_id = ? AND s.participant_id = ?
+    `).all(judgeId, p.id);
+
+    const hasScored = scores.length > 0;
+    let totalScore = 0;
+
+    if (hasScored) {
+      const criteriaMap = {};
+      for (const s of scores) {
+        if (!criteriaMap[s.criteria_id]) {
+          criteriaMap[s.criteria_id] = { raw: 0, weight: s.weight, max: s.max_score };
+        }
+        criteriaMap[s.criteria_id].raw += s.score;
+      }
+      for (const c of Object.values(criteriaMap)) {
+        totalScore += (c.raw / c.max) * c.weight;
+      }
+      totalScore = Math.round(totalScore * 100) / 100;
+    }
 
     return {
       ...p,
-      scored: scoreCount.count > 0,
-      score_count: scoreCount.count
+      has_scored: hasScored,
+      score_total: totalScore,
     };
   });
 
-  res.json(participantsWithStatus);
+  res.json({
+    category,
+    participants: participantsWithStatus,
+  });
+});
+
+// Get scoring form data for a participant
+app.get('/api/judge/scoring/:participantId', requireAuth, (req, res) => {
+  const { participantId } = req.params;
+  const judgeId = req.session.user.id;
+
+  const participant = db.prepare('SELECT * FROM participants WHERE id = ?').get(participantId);
+  if (!participant) {
+    return res.status(404).json({ error: 'Peserta tidak ditemukan' });
+  }
+
+  // Check assignment
+  const assigned = db.prepare(`
+    SELECT 1 FROM judge_categories WHERE judge_id = ? AND category_id = ?
+  `).get(judgeId, participant.category_id);
+
+  if (!assigned && req.session.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Anda tidak ditugaskan ke kategori ini' });
+  }
+
+  const category = db.prepare('SELECT * FROM categories WHERE id = ?').get(participant.category_id);
+
+  // Criteria & Sub-criteria
+  const criteria = db.prepare('SELECT * FROM criteria ORDER BY display_order').all().map(c => {
+    const sub_criteria = db.prepare('SELECT * FROM sub_criteria WHERE criteria_id = ? ORDER BY display_order').all(c.id);
+    return { ...c, sub_criteria };
+  });
+
+  // Current judge scores
+  const scores = db.prepare(`
+    SELECT s.sub_criteria_id, s.score
+    FROM scores s
+    WHERE s.judge_id = ? AND s.participant_id = ?
+  `).all(judgeId, participantId);
+
+  // Find previous and next participants in the same category
+  const prevP = db.prepare(`
+    SELECT id FROM participants 
+    WHERE category_id = ? AND number < ? 
+    ORDER BY number DESC LIMIT 1
+  `).get(participant.category_id, participant.number);
+
+  const nextP = db.prepare(`
+    SELECT id FROM participants 
+    WHERE category_id = ? AND number > ? 
+    ORDER BY number ASC LIMIT 1
+  `).get(participant.category_id, participant.number);
+
+  res.json({
+    participant,
+    category,
+    criteria,
+    scores,
+    prev_participant_id: prevP ? prevP.id : null,
+    next_participant_id: nextP ? nextP.id : null,
+  });
 });
 
 // Get rubrik/criteria
@@ -193,6 +281,31 @@ app.post('/api/judge/scores', requireAuth, (req, res) => {
 
 // ==================== ADMIN ROUTES ====================
 
+// Reset scores (Admin only)
+app.post('/api/admin/reset-scores', requireAdmin, (req, res) => {
+  const { scope, category_id, participant_id } = req.body;
+
+  try {
+    if (scope === 'all') {
+      db.prepare('DELETE FROM scores').run();
+      return res.json({ success: true, message: 'Semua nilai penjurian berhasil direset' });
+    } else if (scope === 'category' && category_id) {
+      db.prepare(`
+        DELETE FROM scores 
+        WHERE participant_id IN (SELECT id FROM participants WHERE category_id = ?)
+      `).run(category_id);
+      return res.json({ success: true, message: 'Nilai kategori berhasil direset' });
+    } else if (scope === 'participant' && participant_id) {
+      db.prepare('DELETE FROM scores WHERE participant_id = ?').run(participant_id);
+      return res.json({ success: true, message: 'Nilai peserta berhasil direset' });
+    } else {
+      return res.status(400).json({ error: 'Scope reset tidak valid (gunakan: all, category, atau participant)' });
+    }
+  } catch (err) {
+    return res.status(500).json({ error: 'Gagal mereset nilai: ' + err.message });
+  }
+});
+
 // Get all categories
 app.get('/api/admin/categories', requireAdmin, (req, res) => {
   const categories = db.prepare('SELECT * FROM categories ORDER BY display_order').all();
@@ -220,7 +333,7 @@ app.get('/api/admin/dashboard', requireAdmin, (req, res) => {
   const totalParticipants = db.prepare('SELECT COUNT(*) as count FROM participants').get().count;
   const totalJudges = db.prepare("SELECT COUNT(*) as count FROM users WHERE role = 'judge'").get().count;
   const totalCategories = db.prepare('SELECT COUNT(*) as count FROM categories').get().count;
-  const totalScoresSubmitted = db.prepare('SELECT COUNT(DISTINCT judge_id || "-" || participant_id) as count FROM scores').get().count;
+  const totalScoresSubmitted = db.prepare("SELECT COUNT(DISTINCT judge_id || '-' || participant_id) as count FROM scores").get().count;
 
   // Total expected = judges * their participants (each judge has assigned categories)
   const expectedScores = db.prepare(`
@@ -261,7 +374,61 @@ app.get('/api/admin/dashboard', requireAdmin, (req, res) => {
   });
 });
 
-// Get all participants with scores for a category
+// Get all results organized by categories
+app.get('/api/admin/results', requireAdmin, (req, res) => {
+  const categories = db.prepare('SELECT * FROM categories ORDER BY display_order').all();
+  const allResults = {};
+
+  for (const cat of categories) {
+    const participants = db.prepare('SELECT * FROM participants WHERE category_id = ? ORDER BY number').all(cat.id);
+    const judges = db.prepare(`
+      SELECT u.id, u.name FROM users u
+      JOIN judge_categories jc ON jc.judge_id = u.id
+      WHERE jc.category_id = ? AND u.role = 'judge'
+    `).all(cat.id);
+
+    const results = participants.map(p => {
+      const judgeScores = judges.map(j => {
+        const scores = db.prepare(`
+          SELECT s.score, sc.criteria_id, c.weight, c.max_score
+          FROM scores s
+          JOIN sub_criteria sc ON s.sub_criteria_id = sc.id
+          JOIN criteria c ON sc.criteria_id = c.id
+          WHERE s.judge_id = ? AND s.participant_id = ?
+        `).all(j.id, p.id);
+
+        const criteriaMap = {};
+        for (const s of scores) {
+          if (!criteriaMap[s.criteria_id]) {
+            criteriaMap[s.criteria_id] = { raw: 0, weight: s.weight, max: s.max_score };
+          }
+          criteriaMap[s.criteria_id].raw += s.score;
+        }
+
+        let total = 0;
+        for (const c of Object.values(criteriaMap)) {
+          total += (c.raw / c.max) * c.weight;
+        }
+
+        return { judge_id: j.id, judge_name: j.name, total: Math.round(total * 100) / 100, has_scored: scores.length > 0 };
+      });
+
+      const scored = judgeScores.filter(j => j.has_scored);
+      const avg = scored.length > 0 ? Math.round((scored.reduce((s, j) => s + j.total, 0) / scored.length) * 100) / 100 : 0;
+
+      return { ...p, judge_scores: judgeScores, average: avg };
+    });
+
+    results.sort((a, b) => b.average - a.average);
+    results.forEach((r, i) => { r.rank = r.average > 0 ? i + 1 : '-'; });
+
+    allResults[cat.code] = { ...cat, judges, results };
+  }
+
+  res.json(allResults);
+});
+
+// Get all participants with scores for a specific category
 app.get('/api/admin/results/:categoryId', requireAdmin, (req, res) => {
   const { categoryId } = req.params;
 
@@ -410,6 +577,10 @@ app.get('/api/admin/all-results', requireAdmin, (req, res) => {
 // ==================== SERVE SPA ====================
 
 app.get('/{*path}', (req, res) => {
+  const distIndex = path.join(__dirname, 'dist', 'index.html');
+  if (fs.existsSync(distIndex)) {
+    return res.sendFile(distIndex);
+  }
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
