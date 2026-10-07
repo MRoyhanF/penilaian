@@ -40,7 +40,10 @@ export function LanguageProvider({ children }) {
         return acc.replace(new RegExp(`{${pKey}}`, 'g'), params[pKey]);
       }, value);
     }
-    return value || key;
+    if (typeof value === 'number') {
+      return String(value);
+    }
+    return key;
   };
 
   return (

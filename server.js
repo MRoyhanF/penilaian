@@ -312,20 +312,167 @@ app.get('/api/admin/categories', requireAdmin, (req, res) => {
   res.json(categories);
 });
 
-// Get all judges
+// Get all judges with detailed category assignments and scoring stats
 app.get('/api/admin/judges', requireAdmin, (req, res) => {
   const judges = db.prepare(`
-    SELECT u.id, u.name, u.username, 
-      GROUP_CONCAT(c.name, ', ') as categories
+    SELECT u.id, u.name, u.username, u.created_at
     FROM users u
-    LEFT JOIN judge_categories jc ON jc.judge_id = u.id
-    LEFT JOIN categories c ON c.id = jc.category_id
     WHERE u.role = 'judge'
-    GROUP BY u.id
     ORDER BY u.id
   `).all();
 
-  res.json(judges);
+  const judgesWithDetails = judges.map(j => {
+    const assignedCats = db.prepare(`
+      SELECT c.id, c.code, c.name 
+      FROM judge_categories jc
+      JOIN categories c ON c.id = jc.category_id
+      WHERE jc.judge_id = ?
+      ORDER BY c.display_order
+    `).all(j.id);
+
+    const scoredCount = db.prepare(`
+      SELECT COUNT(DISTINCT participant_id) as count 
+      FROM scores 
+      WHERE judge_id = ?
+    `).get(j.id).count;
+
+    const totalParticipants = db.prepare(`
+      SELECT COUNT(p.id) as count
+      FROM judge_categories jc
+      JOIN participants p ON p.category_id = jc.category_id
+      WHERE jc.judge_id = ?
+    `).get(j.id).count;
+
+    return {
+      ...j,
+      categories: assignedCats,
+      category_ids: assignedCats.map(c => c.id),
+      categories_label: assignedCats.map(c => c.name).join(', '),
+      scored_count: scoredCount,
+      total_participants: totalParticipants,
+    };
+  });
+
+  res.json(judgesWithDetails);
+});
+
+// Create new judge
+app.post('/api/admin/judges', requireAdmin, (req, res) => {
+  const { name, username, password, category_ids } = req.body;
+
+  if (!name || !username || !password) {
+    return res.status(400).json({ error: 'Nama, username, dan password wajib diisi' });
+  }
+
+  const cleanUsername = username.trim().toLowerCase();
+  const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(cleanUsername);
+  if (existing) {
+    return res.status(400).json({ error: 'Username sudah digunakan oleh akun lain' });
+  }
+
+  const hashedPassword = bcrypt.hashSync(password, 10);
+
+  const insertUser = db.prepare(`
+    INSERT INTO users (name, username, password, role) 
+    VALUES (?, ?, ?, 'judge')
+  `);
+
+  const insertJudgeCat = db.prepare(`
+    INSERT INTO judge_categories (judge_id, category_id) 
+    VALUES (?, ?)
+  `);
+
+  const transaction = db.transaction(() => {
+    const result = insertUser.run(name.trim(), cleanUsername, hashedPassword);
+    const newJudgeId = result.lastInsertRowid;
+
+    if (Array.isArray(category_ids) && category_ids.length > 0) {
+      for (const catId of category_ids) {
+        insertJudgeCat.run(newJudgeId, Number(catId));
+      }
+    }
+
+    return newJudgeId;
+  });
+
+  try {
+    const newId = transaction();
+    res.json({ success: true, id: newId, message: 'Juri baru berhasil ditambahkan' });
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal menambahkan juri: ' + err.message });
+  }
+});
+
+// Update existing judge
+app.put('/api/admin/judges/:id', requireAdmin, (req, res) => {
+  const { id } = req.params;
+  const { name, username, password, category_ids } = req.body;
+
+  const judge = db.prepare("SELECT * FROM users WHERE id = ? AND role = 'judge'").get(id);
+  if (!judge) {
+    return res.status(404).json({ error: 'Data juri tidak ditemukan' });
+  }
+
+  if (!name || !username) {
+    return res.status(400).json({ error: 'Nama dan username tidak boleh kosong' });
+  }
+
+  const cleanUsername = username.trim().toLowerCase();
+  const duplicate = db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(cleanUsername, id);
+  if (duplicate) {
+    return res.status(400).json({ error: 'Username sudah digunakan oleh akun lain' });
+  }
+
+  const transaction = db.transaction(() => {
+    if (password && password.trim().length > 0) {
+      const hashedPassword = bcrypt.hashSync(password.trim(), 10);
+      db.prepare('UPDATE users SET name = ?, username = ?, password = ? WHERE id = ?')
+        .run(name.trim(), cleanUsername, hashedPassword, id);
+    } else {
+      db.prepare('UPDATE users SET name = ?, username = ? WHERE id = ?')
+        .run(name.trim(), cleanUsername, id);
+    }
+
+    // Update assigned categories
+    db.prepare('DELETE FROM judge_categories WHERE judge_id = ?').run(id);
+
+    if (Array.isArray(category_ids) && category_ids.length > 0) {
+      const insertJudgeCat = db.prepare('INSERT INTO judge_categories (judge_id, category_id) VALUES (?, ?)');
+      for (const catId of category_ids) {
+        insertJudgeCat.run(id, Number(catId));
+      }
+    }
+  });
+
+  try {
+    transaction();
+    res.json({ success: true, message: 'Data juri berhasil diperbarui' });
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal memperbarui juri: ' + err.message });
+  }
+});
+
+// Delete judge
+app.delete('/api/admin/judges/:id', requireAdmin, (req, res) => {
+  const { id } = req.params;
+
+  const judge = db.prepare("SELECT * FROM users WHERE id = ? AND role = 'judge'").get(id);
+  if (!judge) {
+    return res.status(404).json({ error: 'Data juri tidak ditemukan' });
+  }
+
+  const transaction = db.transaction(() => {
+    db.prepare('DELETE FROM scores WHERE judge_id = ?').run(id);
+    db.prepare('DELETE FROM judge_categories WHERE judge_id = ?').run(id);
+    db.prepare('DELETE FROM users WHERE id = ?').run(id);
+  });
+
+  try {
+    transaction();
+    res.json({ success: true, message: `Akun juri ${judge.name} berhasil dihapus` });
+  } catch (err) {
+    res.status(500).json({ error: 'Gagal menghapus juri: ' + err.message });
+  }
 });
 
 // Get dashboard stats

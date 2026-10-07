@@ -42,20 +42,16 @@ export default function App() {
 
   // Sync user state with default landing page
   useEffect(() => {
-    if (!loading) {
-      if (user) {
-        if (user.role === 'admin') {
-          if (currentPage === 'login' || !currentPage.startsWith('admin')) {
-            setCurrentPage('admin-dashboard');
-          }
-        } else {
-          if (currentPage === 'login' || !currentPage.startsWith('judge')) {
-            setCurrentPage('judge-categories');
-          }
-          fetchJudgeCategories();
+    if (!loading && user) {
+      if (user.role === 'admin') {
+        if (currentPage === 'login' || !currentPage.startsWith('admin')) {
+          setCurrentPage('admin-dashboard');
         }
       } else {
-        setCurrentPage('login');
+        if (currentPage === 'login' || !currentPage.startsWith('judge')) {
+          setCurrentPage('judge-categories');
+        }
+        fetchJudgeCategories();
       }
     }
   }, [user, loading]);
@@ -63,9 +59,9 @@ export default function App() {
   const fetchJudgeCategories = async () => {
     try {
       const cats = await api.getJudgeCategories();
-      setJudgeCategories(cats);
+      setJudgeCategories(Array.isArray(cats) ? cats : []);
     } catch {
-      // Ignored
+      setJudgeCategories([]);
     }
   };
 
@@ -116,7 +112,7 @@ export default function App() {
     );
   }
 
-  if (!user || currentPage === 'login') {
+  if (!user) {
     return (
       <>
         <LoginPage onLoginSuccess={handleLoginSuccess} />
@@ -125,35 +121,40 @@ export default function App() {
     );
   }
 
+  // Derive active page safely to prevent any flash/glitch on login
+  const activePage = (currentPage === 'login' || (user.role === 'admin' && !currentPage.startsWith('admin')) || (user.role === 'judge' && !currentPage.startsWith('judge')))
+    ? (user.role === 'admin' ? 'admin-dashboard' : 'judge-categories')
+    : currentPage;
+
   // Generate breadcrumbs
   const breadcrumbs = [];
   if (user.role === 'judge') {
     breadcrumbs.push({
       label: t('navCategories'),
-      action: currentPage !== 'judge-categories' ? handleBackToCategories : null,
+      action: activePage !== 'judge-categories' ? handleBackToCategories : null,
     });
-    if (currentPage === 'judge-participants' || currentPage === 'judge-scoring') {
+    if (activePage === 'judge-participants' || activePage === 'judge-scoring') {
       const activeCat = judgeCategories.find((c) => c.id === selectedCategoryId);
       breadcrumbs.push({
         label: activeCat ? activeCat.name : t('navParticipants'),
-        action: currentPage === 'judge-scoring' ? handleBackToParticipants : null,
+        action: activePage === 'judge-scoring' ? handleBackToParticipants : null,
       });
     }
-    if (currentPage === 'judge-scoring') {
+    if (activePage === 'judge-scoring') {
       breadcrumbs.push({
         label: t('navScoring'),
       });
     }
   } else if (user.role === 'admin') {
-    if (currentPage === 'admin-dashboard') {
+    if (activePage === 'admin-dashboard') {
       breadcrumbs.push({ label: t('navDashboard') });
-    } else if (currentPage === 'admin-results') {
+    } else if (activePage === 'admin-results') {
       breadcrumbs.push({
         label: t('navDashboard'),
         action: () => setCurrentPage('admin-dashboard'),
       });
       breadcrumbs.push({ label: t('navResults') });
-    } else if (currentPage === 'admin-judges') {
+    } else if (activePage === 'admin-judges') {
       breadcrumbs.push({
         label: t('navDashboard'),
         action: () => setCurrentPage('admin-dashboard'),
@@ -165,7 +166,7 @@ export default function App() {
   return (
     <div className="app-container">
       <Navbar
-        currentPage={currentPage}
+        currentPage={activePage}
         onNavigate={setCurrentPage}
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
@@ -174,7 +175,7 @@ export default function App() {
 
       <div className="app-body">
         <Sidebar
-          currentPage={currentPage}
+          currentPage={activePage}
           onNavigate={setCurrentPage}
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
@@ -184,11 +185,11 @@ export default function App() {
         />
 
         <main className="app-main-content">
-          {currentPage === 'judge-categories' && (
+          {activePage === 'judge-categories' && (
             <JudgeCategoriesPage onSelectCategory={handleSelectCategory} />
           )}
 
-          {currentPage === 'judge-participants' && (
+          {activePage === 'judge-participants' && (
             <JudgeParticipantsPage
               categoryId={selectedCategoryId}
               onBack={handleBackToCategories}
@@ -196,7 +197,7 @@ export default function App() {
             />
           )}
 
-          {currentPage === 'judge-scoring' && (
+          {activePage === 'judge-scoring' && (
             <JudgeScoringPage
               participantId={selectedParticipantId}
               onBack={handleBackToParticipants}
@@ -205,7 +206,7 @@ export default function App() {
             />
           )}
 
-          {currentPage === 'admin-dashboard' && (
+          {activePage === 'admin-dashboard' && (
             <AdminDashboardPage
               onNavigate={setCurrentPage}
               onSelectCategoryResults={handleAdminSelectCategoryResults}
@@ -213,15 +214,15 @@ export default function App() {
             />
           )}
 
-          {currentPage === 'admin-results' && (
+          {activePage === 'admin-results' && (
             <AdminResultsPage 
               initialCategoryCode={selectedCategoryCode} 
               showToast={showToast}
             />
           )}
 
-          {currentPage === 'admin-judges' && (
-            <AdminJudgesPage />
+          {activePage === 'admin-judges' && (
+            <AdminJudgesPage showToast={showToast} />
           )}
         </main>
       </div>

@@ -52,5 +52,9 @@ export const api = {
   getAdminDashboard: () => request('/api/admin/dashboard'),
   getAdminResults: (categoryCode = '') => request(`/api/admin/results${categoryCode ? `?category=${categoryCode}` : ''}`),
   getAdminJudges: () => request('/api/admin/judges'),
+  createJudge: (data) => request('/api/admin/judges', { method: 'POST', body: data }),
+  updateJudge: (id, data) => request(`/api/admin/judges/${id}`, { method: 'PUT', body: data }),
+  deleteJudge: (id) => request(`/api/admin/judges/${id}`, { method: 'DELETE' }),
+  getCategories: () => request('/api/admin/categories'),
   resetScores: (data) => request('/api/admin/reset-scores', { method: 'POST', body: data }),
 };

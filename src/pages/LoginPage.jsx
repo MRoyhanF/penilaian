@@ -32,10 +32,11 @@ export default function LoginPage({ onLoginSuccess }) {
     setError('');
     try {
       const user = await login(username.trim(), password);
-      if (onLoginSuccess) onLoginSuccess(user);
+      if (onLoginSuccess) {
+        onLoginSuccess(user);
+      }
     } catch (err) {
       setError(err.message || t('loginError'));
-    } finally {
       setLoading(false);
     }
   };

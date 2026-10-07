@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
+import RubricGuideCard from '../components/RubricGuideCard';
 import { 
   Users, 
   CheckCircle2, 
@@ -25,9 +26,10 @@ export default function JudgeCategoriesPage({ onSelectCategory }) {
     setError('');
     try {
       const data = await api.getJudgeCategories();
-      setCategories(data);
+      setCategories(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message || 'Failed to load categories');
+      setCategories([]);
     } finally {
       setLoading(false);
     }
@@ -132,6 +134,12 @@ export default function JudgeCategoriesPage({ onSelectCategory }) {
           );
         })}
       </div>
+
+      {/* Evaluation Rubric Guide Section */}
+      <div className="dashboard-section-block" style={{ marginTop: '2.5rem' }}>
+        <RubricGuideCard defaultExpanded={true} />
+      </div>
     </div>
   );
 }
+

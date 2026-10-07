@@ -241,9 +241,17 @@ export default function AdminDashboardPage({ onNavigate, onSelectCategoryResults
                 <h4 className="judge-card-name">{j.name}</h4>
                 <span className="judge-username">@{j.username}</span>
                 <div className="judge-assigned-tags">
-                  {j.categories ? j.categories.split(', ').map((catName, idx) => (
-                    <span key={idx} className="assigned-tag">{catName}</span>
-                  )) : (
+                  {Array.isArray(j.categories) && j.categories.length > 0 ? (
+                    j.categories.map((cat, idx) => (
+                      <span key={cat.id || idx} className="assigned-tag">
+                        {typeof cat === 'object' ? cat.name : cat}
+                      </span>
+                    ))
+                  ) : typeof j.categories === 'string' && j.categories ? (
+                    j.categories.split(', ').map((catName, idx) => (
+                      <span key={idx} className="assigned-tag">{catName}</span>
+                    ))
+                  ) : (
                     <span className="assigned-tag text-muted">{t('notAssigned')}</span>
                   )}
                 </div>
