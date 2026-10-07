@@ -1,0 +1,251 @@
+{
+  "starter": {
+    "judges": [
+      "Mr Eko",
+      "Pak Husna"
+    ],
+    "participants": [
+      {
+        "number": 1,
+        "name": "Gladden Hirovirya Limdrew",
+        "phone": "6281901919161",
+        "school": "Timedoor Academy",
+        "project": "Dad Home"
+      },
+      {
+        "number": 2,
+        "name": "Maverich Wellington The",
+        "phone": "62895610615016",
+        "school": "Guang Ming School",
+        "project": "Racing Game Nuklir"
+      },
+      {
+        "number": 3,
+        "name": "Jaiden Lionelle Mulyanata",
+        "phone": "6285100120986",
+        "school": "Stella Maris Jambi",
+        "project": "War Game and Finding Star"
+      },
+      {
+        "number": 4,
+        "name": "Muhammad Azfer Althezza Arvinza",
+        "phone": "6285283424167",
+        "school": "MIS Darussalam Kota Jambi",
+        "project": "Collect the Coin"
+      },
+      {
+        "number": 5,
+        "name": "Steven Aiden Liem",
+        "phone": "62818180879",
+        "school": "Karunia Global School",
+        "project": "Mars Chaos"
+      },
+      {
+        "number": 6,
+        "name": "Rayson Devatta Wang",
+        "phone": "6285382203355",
+        "school": "Guang Ming School",
+        "project": "Abadi Suite Castle"
+      }
+    ]
+  },
+  "beginner": {
+    "judges": [
+      "Mr Eko",
+      "Pak Husna"
+    ],
+    "participants": [
+      {
+        "number": 7,
+        "name": "M. Fajri Al Amin",
+        "phone": "6285840329612",
+        "school": "SD Al Falah 1 Jambi",
+        "project": "Tangkap Buah Apel Dan Pisang"
+      },
+      {
+        "number": 8,
+        "name": "Kevin Rianza",
+        "phone": "6282211243838",
+        "school": "SD Adhyaksa 1 Jambi",
+        "project": "Sahabat Tanaman"
+      },
+      {
+        "number": 9,
+        "name": "Yuma Raffasya Anwar",
+        "phone": "6285327671361",
+        "school": "SD Islam Al Falah Jambi",
+        "project": "Dino Buddy"
+      },
+      {
+        "number": 10,
+        "name": "Zahra Ananda",
+        "phone": "6285384824340",
+        "school": "SD Al Falah 1 Jambi",
+        "project": "MIND MART"
+      },
+      {
+        "number": 11,
+        "name": "M. Alvaro Adhyasta Asnan",
+        "phone": "628127431466",
+        "school": "SD Islam Al Falah Jambi",
+        "project": "Math with AI Game"
+      },
+      {
+        "number": 12,
+        "name": "Matthew Benedict Khouw",
+        "phone": "6281221553778",
+        "school": "Suria Harapan School Jambi",
+        "project": "SAVE YOUR EYES"
+      },
+      {
+        "number": 13,
+        "name": "Stefany Linson Rotua Sitanggang",
+        "phone": "6282312000567",
+        "school": "Xaverius 1 Jambi",
+        "project": "Pilih Makanan Sehat App Game"
+      },
+      {
+        "number": 14,
+        "name": "Manggala Harya Aksa",
+        "phone": "628116011000",
+        "school": "Karunia Global School",
+        "project": "pictoOS"
+      },
+      {
+        "number": 15,
+        "name": "Chayra Syasya Yulian",
+        "phone": "6282371308530",
+        "school": "SD Al Falah 1 Jambi",
+        "project": "BeliBeli"
+      },
+      {
+        "number": 16,
+        "name": "Xavier Chandra",
+        "phone": "628117400715",
+        "school": "SD Unggul Sakti Jambi",
+        "project": "XAVIER'S PROJECT FOR LAZY PEOPLE"
+      }
+    ]
+  },
+  "intermediate": {
+    "judges": [
+      "Mr Royhan",
+      "Pak Laylin"
+    ],
+    "participants": [
+      {
+        "number": 17,
+        "name": "Muhammad Ali Habsyi Al Buchory",
+        "phone": "6285283424167",
+        "school": "SMP Achmad Dahlan Kota Jambi",
+        "project": "SPACESHIP METEORID"
+      },
+      {
+        "number": 18,
+        "name": "Albert Zorion Ong",
+        "phone": "6282370529229",
+        "school": "Guang Ming School Jambi",
+        "project": "Kingdom Storytelling"
+      },
+      {
+        "number": 19,
+        "name": "Maximillian Charles",
+        "phone": "6287796590009",
+        "school": "Karunia Global School",
+        "project": "my project"
+      },
+      {
+        "number": 20,
+        "name": "OSEL MOKSA JAGADHITA",
+        "phone": "6282307206039",
+        "school": "SMP Negeri 5 Jambi",
+        "project": "Membedakan Sampah Organik dan Sampah Anorganik"
+      },
+      {
+        "number": 21,
+        "name": "Yasmine Kamila Hakim",
+        "phone": "6285211919341",
+        "school": "SMPIT Annahl Jambi",
+        "project": "Safe Medsos"
+      }
+    ]
+  },
+  "senior": {
+    "judges": [
+      "Mr Royhan",
+      "Pak Laylin"
+    ],
+    "participants": [
+      {
+        "number": 22,
+        "name": "Aqlam Fawwaz Ramadhan",
+        "phone": "6281367651464",
+        "school": "SMA 3 Kota Jambi",
+        "project": "Food Scan AI"
+      },
+      {
+        "number": 23,
+        "name": "Ratu Zahirah Hartinah",
+        "phone": "6285266401824",
+        "school": "SMA 3 Kota Jambi",
+        "project": "AI HEALTHY DAILY ASSISTANT"
+      },
+      {
+        "number": 24,
+        "name": "Bennedict Javier",
+        "phone": "6281919111155",
+        "school": "SMA Xaverius 1 Jambi",
+        "project": "valo hub ai"
+      },
+      {
+        "number": 25,
+        "name": "Kyandra Agustin",
+        "phone": "6282278037451",
+        "school": "SMA 3 Kota Jambi",
+        "project": "Nutri Glow"
+      },
+      {
+        "number": 26,
+        "name": "Ave Difanny Marissa Br. Tampubolon",
+        "phone": "6281312121252",
+        "school": "SMA 3 Kota Jambi",
+        "project": "Object Detection"
+      },
+      {
+        "number": 27,
+        "name": "Rizqullah Irsan",
+        "phone": "6283144181048",
+        "school": "SMK 2 Kota Jambi",
+        "project": "NusaRagam AI - Pelestari Bahasa & Warisan Budaya Nusantara"
+      },
+      {
+        "number": 28,
+        "name": "Ibel Nathanael Ambarita",
+        "phone": "62818807109",
+        "school": "SMK 2 Kota Jambi",
+        "project": "AI Outfit Style Advisor"
+      },
+      {
+        "number": 29,
+        "name": "Hafidh Musyaffa",
+        "phone": "6285280359424",
+        "school": "SMK 2 Kota Jambi",
+        "project": "PahamTek (Platform Belajar Teknologi dan Web Interaktif Berbasis AI)"
+      },
+      {
+        "number": 30,
+        "name": "Lionel Octavio Yap",
+        "phone": "628127401075",
+        "school": "SMA Bina Kasih",
+        "project": "Communix Ai"
+      },
+      {
+        "number": 31,
+        "name": "Johanes Simon Fredrick Pakpahan",
+        "phone": "6281366707870",
+        "school": "SMK Unggul Sakti",
+        "project": "AI Daily For Life"
+      }
+    ]
+  }
+}

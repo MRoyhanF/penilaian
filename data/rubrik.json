@@ -1,0 +1,136 @@
+{
+  "criteria": [
+    {
+      "code": "idea",
+      "name": "Idea & Creativity",
+      "weight": 40,
+      "max_score": 100,
+      "sub_criteria": [
+        {
+          "code": "pdb_ppt",
+          "name": "Project Display Board or PPT",
+          "detail": "Participants decorate and/or bring PDB or PPT with dimensions according to the guidelines.",
+          "score_range": {
+            "min": 0,
+            "max": 25
+          }
+        },
+        {
+          "code": "theme_relevance",
+          "name": "Relevance to the Theme",
+          "detail": "The Project & PDB/PPT concept is very creative, precise and consistent in depicting the theme.",
+          "score_range": {
+            "min": 0,
+            "max": 25
+          }
+        },
+        {
+          "code": "creativity",
+          "name": "Creativity and Originality of Concept",
+          "detail": "Project & PDB/PPT is very innovative, interesting, unique, different from other works, and has a harmonious design.",
+          "score_range": {
+            "min": 0,
+            "max": 25
+          }
+        },
+        {
+          "code": "content_suitability",
+          "name": "Content Suitability",
+          "detail": "Does not contain components that are prohibited or inappropriate for children; SARA, pornography.",
+          "score_range": {
+            "min": 0,
+            "max": 25
+          }
+        }
+      ]
+    },
+    {
+      "code": "code",
+      "name": "Code & Design",
+      "weight": 30,
+      "max_score": 100,
+      "sub_criteria": [
+        {
+          "code": "readability",
+          "name": "Readability",
+          "detail": "Effective code, easy to read and understand.",
+          "score_range": {
+            "min": 0,
+            "max": 25
+          }
+        },
+        {
+          "code": "functionality",
+          "name": "Functionality",
+          "detail": "The project ran smoothly during the exhibition without any problems when demonstrated to the judge.",
+          "score_range": {
+            "min": 0,
+            "max": 25
+          }
+        },
+        {
+          "code": "efficiency",
+          "name": "Efficiency",
+          "detail": "All sections of the code are necessary and useful.",
+          "score_range": {
+            "min": 0,
+            "max": 25
+          }
+        },
+        {
+          "code": "ai_interactivity",
+          "name": "AI Integration / Interactivity & Gameplay",
+          "detail": "Well integrated AI / interactive and engaging gameplay.",
+          "score_range": {
+            "min": 0,
+            "max": 25
+          }
+        }
+      ]
+    },
+    {
+      "code": "presentation",
+      "name": "Presentation",
+      "weight": 30,
+      "max_score": 100,
+      "sub_criteria": [
+        {
+          "code": "project_presentation",
+          "name": "Project Presentation",
+          "detail": "The participant presented their project well and answered the judges' questions accurately.",
+          "score_range": {
+            "min": 0,
+            "max": 25
+          }
+        },
+        {
+          "code": "communication",
+          "name": "Communication Skills",
+          "detail": "The participant communicated their project well to the judges and answered questions effectively.",
+          "score_range": {
+            "min": 0,
+            "max": 25
+          }
+        },
+        {
+          "code": "body_language",
+          "name": "Body Language",
+          "detail": "The participant used excellent body language and enhanced communication.",
+          "score_range": {
+            "min": 0,
+            "max": 25
+          }
+        },
+        {
+          "code": "supporting_tools",
+          "name": "Supporting Tools",
+          "detail": "The tools used by the participant supported the presentation well.",
+          "score_range": {
+            "min": 0,
+            "max": 25
+          }
+        }
+      ]
+    }
+  ]
+}

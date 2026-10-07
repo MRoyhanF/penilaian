@@ -1,0 +1,40 @@
+{
+  "judges": [
+    {
+      "id": 1,
+      "name": "Mr Eko",
+      "username": "eko",
+      "categories": [
+        "starter",
+        "beginner"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Pak Husna",
+      "username": "husna",
+      "categories": [
+        "starter",
+        "beginner"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Mr Royhan",
+      "username": "royhan",
+      "categories": [
+        "intermediate",
+        "senior"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Pak Laylin",
+      "username": "laylin",
+      "categories": [
+        "intermediate",
+        "senior"
+      ]
+    }
+  ]
+}
