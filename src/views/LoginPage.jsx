@@ -14,6 +14,7 @@ import {
   Sun,
   Moon
 } from 'lucide-react';
+import BrandLogo from '../components/BrandLogo';
 
 export default function LoginPage({ onLoginSuccess }) {
   const { login } = useAuth();
@@ -94,11 +95,13 @@ export default function LoginPage({ onLoginSuccess }) {
 
         <div className="login-card">
           <div className="login-branding">
-            <div className="login-logo-orb">
-              <Trophy size={32} className="logo-trophy" />
+            <div className="login-brand-logo-wrapper">
+              <BrandLogo size="large" showSubtitle={true} showTimedoor={true} />
             </div>
             <h1 className="login-title">{t('loginTitle')}</h1>
-            <p className="login-subtitle">{t('loginSubtitle')}</p>
+            <p className="login-subtitle">
+              Portal Penilaian Resmi Juri & Administrator
+            </p>
           </div>
 
           {error && (

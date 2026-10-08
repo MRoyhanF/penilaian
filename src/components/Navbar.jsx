@@ -20,6 +20,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen
 } from 'lucide-react';
+import BrandLogo from './BrandLogo';
 
 export default function Navbar({ 
   currentPage, 
@@ -108,20 +109,10 @@ export default function Navbar({
         </button>
 
         {/* Brand Logo & Title */}
-        <div 
-          className="brand-badge" 
+        <BrandLogo 
+          size="medium"
           onClick={() => onNavigate(user?.role === 'admin' ? 'admin-dashboard' : 'judge-categories')}
-          role="button"
-          tabIndex={0}
-        >
-          <div className="brand-icon-wrapper">
-            <Trophy size={18} className="brand-icon" />
-          </div>
-          <div className="brand-text-block">
-            <span className="brand-title">{t('appName')}</span>
-            <span className="brand-subtitle">{t('competitionName')}</span>
-          </div>
-        </div>
+        />
 
         {/* Breadcrumbs */}
         {breadcrumbs.length > 0 && (

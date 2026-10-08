@@ -2,9 +2,10 @@ export const translations = {
   id: {
     // General & App
     appName: "Sistem Penjurian",
-    appSubtitle: "Coding Competition Platform",
-    competitionName: "Timedoor Coding Competition",
-    tagline: "Sistem Penilaian Cepat, Akurat & Transparan",
+    appSubtitle: "YCWC Regional Jambi",
+    competitionName: "YCWC Regional Jambi",
+    organizationName: "Timedoor Academy",
+    tagline: "Young Creators Web Competition • Timedoor Academy",
     loading: "Memuat data...",
     saving: "Menyimpan...",
     save: "Simpan Nilai",
@@ -236,9 +237,10 @@ export const translations = {
   en: {
     // General & App
     appName: "Judging System",
-    appSubtitle: "Coding Competition Platform",
-    competitionName: "Timedoor Coding Competition",
-    tagline: "Fast, Accurate & Transparent Scoring System",
+    appSubtitle: "YCWC Regional Jambi",
+    competitionName: "YCWC Regional Jambi",
+    organizationName: "Timedoor Academy",
+    tagline: "Young Creators Web Competition • Timedoor Academy",
     loading: "Loading data...",
     saving: "Saving...",
     save: "Save Score",
