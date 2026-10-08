@@ -26,8 +26,27 @@ export default function App() {
   const [selectedCategoryCode, setSelectedCategoryCode] = useState(null);
   const [selectedParticipantId, setSelectedParticipantId] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarMinimized, setSidebarMinimized] = useState(false);
   const [judgeCategories, setJudgeCategories] = useState([]);
   const [toasts, setToasts] = useState([]);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('sidebar_minimized');
+      if (saved === 'true') setSidebarMinimized(true);
+    } catch {
+      // Ignore
+    }
+  }, []);
+
+  const handleToggleMinimize = (val) => {
+    setSidebarMinimized(val);
+    try {
+      localStorage.setItem('sidebar_minimized', String(val));
+    } catch {
+      // Ignore
+    }
+  };
 
   // Toast Helper
   const showToast = (message, type = 'success') => {
@@ -172,6 +191,8 @@ export default function App() {
         onNavigate={setCurrentPage}
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
+        sidebarMinimized={sidebarMinimized}
+        setSidebarMinimized={handleToggleMinimize}
         breadcrumbs={breadcrumbs}
       />
 
@@ -181,12 +202,14 @@ export default function App() {
           onNavigate={setCurrentPage}
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
+          sidebarMinimized={sidebarMinimized}
+          setSidebarMinimized={handleToggleMinimize}
           judgeCategories={judgeCategories}
           selectedCategoryId={selectedCategoryId}
           onSelectCategory={handleSelectCategory}
         />
 
-        <main className="app-main-content">
+        <main className={`app-main-content ${sidebarMinimized ? 'sidebar-minimized' : ''}`}>
           {activePage === 'judge-categories' && (
             <JudgeCategoriesPage onSelectCategory={handleSelectCategory} />
           )}
