@@ -7,3 +7,4 @@ dist/
 penjurian.db
 penjurian.db-shm
 penjurian.db-wal
+.next

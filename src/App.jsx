@@ -9,13 +9,13 @@ import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import Toast from './components/Toast';
 
-import LoginPage from './pages/LoginPage';
-import JudgeCategoriesPage from './pages/JudgeCategoriesPage';
-import JudgeParticipantsPage from './pages/JudgeParticipantsPage';
-import JudgeScoringPage from './pages/JudgeScoringPage';
-import AdminDashboardPage from './pages/AdminDashboardPage';
-import AdminResultsPage from './pages/AdminResultsPage';
-import AdminJudgesPage from './pages/AdminJudgesPage';
+import LoginPage from './views/LoginPage';
+import JudgeCategoriesPage from './views/JudgeCategoriesPage';
+import JudgeParticipantsPage from './views/JudgeParticipantsPage';
+import JudgeScoringPage from './views/JudgeScoringPage';
+import AdminDashboardPage from './views/AdminDashboardPage';
+import AdminResultsPage from './views/AdminResultsPage';
+import AdminJudgesPage from './views/AdminJudgesPage';
 
 export default function App() {
   const { user, loading } = useAuth();
