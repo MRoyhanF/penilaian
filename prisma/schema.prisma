@@ -1,0 +1,109 @@
+// Prisma schema for Sistem Penjurian (connected to Supabase PostgreSQL)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id              Int             @id @default(autoincrement())
+  name            String
+  username        String          @unique
+  password        String
+  role            String          @default("judge")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  judgeCategories JudgeCategory[]
+  scores          Score[]
+
+  @@map("users")
+}
+
+model Category {
+  id              Int             @id @default(autoincrement())
+  code            String          @unique
+  name            String
+  displayOrder    Int             @default(0) @map("display_order")
+  participants    Participant[]
+  judgeCategories JudgeCategory[]
+
+  @@map("categories")
+}
+
+model Participant {
+  id         Int       @id @default(autoincrement())
+  number     Int
+  name       String
+  phone      String?
+  school     String?
+  project    String?
+  categoryId Int       @map("category_id")
+  category   Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  scores     Score[]
+
+  @@index([categoryId])
+  @@map("participants")
+}
+
+model JudgeCategory {
+  id         Int      @id @default(autoincrement())
+  judgeId    Int      @map("judge_id")
+  categoryId Int      @map("category_id")
+  judge      User     @relation(fields: [judgeId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([judgeId, categoryId])
+  @@index([judgeId])
+  @@index([categoryId])
+  @@map("judge_categories")
+}
+
+model Criteria {
+  id           Int           @id @default(autoincrement())
+  code         String
+  name         String
+  weight       Int
+  maxScore     Int           @default(100) @map("max_score")
+  displayOrder Int           @default(0) @map("display_order")
+  subCriteria  SubCriteria[]
+
+  @@map("criteria")
+}
+
+model SubCriteria {
+  id           Int       @id @default(autoincrement())
+  criteriaId   Int       @map("criteria_id")
+  code         String
+  name         String
+  detail       String?
+  minScore     Int?      @default(0) @map("min_score")
+  maxScore     Int?      @default(25) @map("max_score")
+  displayOrder Int       @default(0) @map("display_order")
+  criteria     Criteria  @relation(fields: [criteriaId], references: [id], onDelete: Cascade)
+  scores       Score[]
+
+  @@index([criteriaId])
+  @@map("sub_criteria")
+}
+
+model Score {
+  id             Int         @id @default(autoincrement())
+  judgeId        Int         @map("judge_id")
+  participantId  Int         @map("participant_id")
+  subCriteriaId  Int         @map("sub_criteria_id")
+  score          Int         @default(0)
+  updatedAt      DateTime    @default(now()) @updatedAt @map("updated_at")
+  judge          User        @relation(fields: [judgeId], references: [id], onDelete: Cascade)
+  participant    Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  subCriteria    SubCriteria @relation(fields: [subCriteriaId], references: [id], onDelete: Cascade)
+
+  @@unique([judgeId, participantId, subCriteriaId])
+  @@index([judgeId])
+  @@index([participantId])
+  @@index([judgeId, participantId])
+  @@map("scores")
+}

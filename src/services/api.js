@@ -1,9 +1,31 @@
-// Centralized API client for Sistem Penjurian
+// Centralized API client for Sistem Penjurian (Supabase + Prisma + Next.js JWT)
+
+const TOKEN_KEY = 'juri_auth_token';
+
+function getToken() {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+function setToken(token) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+function removeToken() {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(TOKEN_KEY);
+}
 
 async function request(url, options = {}) {
   const defaultHeaders = {
     'Content-Type': 'application/json',
   };
+
+  const token = getToken();
+  if (token) {
+    defaultHeaders['Authorization'] = `Bearer ${token}`;
+  }
 
   const config = {
     ...options,
@@ -11,7 +33,6 @@ async function request(url, options = {}) {
       ...defaultHeaders,
       ...options.headers,
     },
-    credentials: 'same-origin',
   };
 
   if (options.body && typeof options.body === 'object') {
@@ -37,15 +58,23 @@ async function request(url, options = {}) {
 }
 
 export const api = {
+  // Token management
+  getToken,
+  setToken,
+  removeToken,
+
   // Auth
   login: (username, password) => request('/api/login', { method: 'POST', body: { username, password } }),
-  logout: () => request('/api/logout', { method: 'POST' }),
+  logout: () => {
+    removeToken();
+    return Promise.resolve({ success: true });
+  },
   getMe: () => request('/api/me'),
 
   // Judge
   getJudgeCategories: () => request('/api/judge/categories'),
-  getJudgeParticipants: (categoryId) => request(`/api/judge/participants/${categoryId}`),
-  getJudgeScoring: (participantId) => request(`/api/judge/scoring/${participantId}`),
+  getJudgeParticipants: (categoryId) => request(`/api/judge/participants?categoryId=${categoryId}`),
+  getJudgeScoring: (participantId) => request(`/api/judge/scoring?participantId=${participantId}`),
   saveScores: (data) => request('/api/judge/scores', { method: 'POST', body: data }),
 
   // Admin

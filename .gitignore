@@ -2,3 +2,8 @@ node_modules
 cookies.txt
 .DS_Store
 *.log
+.env
+dist/
+penjurian.db
+penjurian.db-shm
+penjurian.db-wal

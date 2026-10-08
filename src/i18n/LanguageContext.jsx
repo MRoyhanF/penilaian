@@ -1,16 +1,25 @@
+'use client';
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { translations } from './translations';
 
 const LanguageContext = createContext();
 
 export function LanguageProvider({ children }) {
-  const [lang, setLang] = useState(() => {
-    return localStorage.getItem('app_lang') || 'id';
-  });
+  const [lang, setLang] = useState('id');
 
   useEffect(() => {
-    localStorage.setItem('app_lang', lang);
-    document.documentElement.lang = lang;
+    const saved = localStorage.getItem('app_lang');
+    if (saved) {
+      setLang(saved);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('app_lang', lang);
+      document.documentElement.lang = lang;
+    }
   }, [lang]);
 
   const toggleLanguage = () => {

@@ -4,7 +4,7 @@
   "outputDirectory": "dist",
   "builds": [
     {
-      "src": "server.js",
+      "src": "api/**/*.js",
       "use": "@vercel/node"
     },
     {
@@ -14,17 +14,22 @@
     }
   ],
   "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/server.js"
-    },
-    {
-      "src": "/assets/(.*)",
-      "dest": "/dist/assets/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/dist/index.html"
-    }
+    { "src": "/api/login", "dest": "/api/login.js" },
+    { "src": "/api/me", "dest": "/api/me.js" },
+    { "src": "/api/criteria", "dest": "/api/criteria.js" },
+    { "src": "/api/judge/categories", "dest": "/api/judge/categories.js" },
+    { "src": "/api/judge/participants\\??(.*)", "dest": "/api/judge/participants.js" },
+    { "src": "/api/judge/scoring\\??(.*)", "dest": "/api/judge/scoring.js" },
+    { "src": "/api/judge/scores\\??(.*)", "dest": "/api/judge/scores.js" },
+    { "src": "/api/admin/dashboard", "dest": "/api/admin/dashboard.js" },
+    { "src": "/api/admin/categories", "dest": "/api/admin/categories.js" },
+    { "src": "/api/admin/judges/([^/]+)", "dest": "/api/admin/judges/[id].js?id=$1" },
+    { "src": "/api/admin/judges", "dest": "/api/admin/judges.js" },
+    { "src": "/api/admin/reset-scores", "dest": "/api/admin/reset-scores.js" },
+    { "src": "/api/admin/results/([^/]+)", "dest": "/api/admin/results/[categoryId].js?categoryId=$1" },
+    { "src": "/api/admin/results", "dest": "/api/admin/results.js" },
+    { "src": "/api/admin/all-results", "dest": "/api/admin/all-results.js" },
+    { "src": "/assets/(.*)", "dest": "/dist/assets/$1" },
+    { "src": "/(.*)", "dest": "/dist/index.html" }
   ]
 }
