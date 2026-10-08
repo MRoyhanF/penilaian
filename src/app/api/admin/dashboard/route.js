@@ -12,77 +12,81 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Counts
-    const totalParticipants = await prisma.participant.count();
-    const totalJudges = await prisma.user.count({ where: { role: 'judge' } });
-    const totalCategories = await prisma.category.count();
-
-    // Unique judge-participant scores
-    const distinctScores = await prisma.score.groupBy({
-      by: ['judgeId', 'participantId'],
-    });
-    const totalScoresSubmitted = distinctScores.length;
-
-    // Categories with participants & judge assignments
-    const categories = await prisma.category.findMany({
-      orderBy: { displayOrder: 'asc' },
-      include: {
-        participants: {
-          select: {
-            id: true,
+    // Parallel optimized query fetching
+    const [totalParticipants, totalJudges, categories, allScores] = await Promise.all([
+      prisma.participant.count(),
+      prisma.user.count({ where: { role: 'judge' } }),
+      prisma.category.findMany({
+        orderBy: { displayOrder: 'asc' },
+        include: {
+          participants: {
+            select: { id: true },
+          },
+          judgeCategories: {
+            select: { judgeId: true },
           },
         },
-        judgeCategories: {
-          select: {
-            judgeId: true,
+      }),
+      prisma.score.findMany({
+        select: {
+          judgeId: true,
+          participantId: true,
+          participant: {
+            select: { categoryId: true },
           },
         },
-      },
-    });
+        distinct: ['judgeId', 'participantId'],
+      }),
+    ]);
+
+    const totalScoresSubmitted = allScores.length;
+
+    // Group scores by category in memory for instant speed (O(N) in memory)
+    const categoryScoredMap = {};
+    for (const score of allScores) {
+      const catId = score.participant?.categoryId;
+      if (catId) {
+        categoryScoredMap[catId] = (categoryScoredMap[catId] || 0) + 1;
+      }
+    }
 
     let expectedScores = 0;
-    const categoryStats = [];
-
-    for (const cat of categories) {
+    const categoryStats = categories.map((cat) => {
       const participantCount = cat.participants.length;
       const judgeCount = cat.judgeCategories.length;
       const expectedCount = participantCount * judgeCount;
       expectedScores += expectedCount;
 
-      const catParticipantIds = cat.participants.map((p) => p.id);
-      let catScoredCount = 0;
+      const scoredCount = categoryScoredMap[cat.id] || 0;
 
-      if (catParticipantIds.length > 0) {
-        const catDistinctScores = await prisma.score.groupBy({
-          by: ['judgeId', 'participantId'],
-          where: {
-            participantId: { in: catParticipantIds },
-          },
-        });
-        catScoredCount = catDistinctScores.length;
-      }
-
-      categoryStats.push({
+      return {
         id: cat.id,
         code: cat.code,
         name: cat.name,
         participant_count: participantCount,
-        scored_count: catScoredCount,
+        scored_count: scoredCount,
         expected_count: expectedCount,
-      });
-    }
+      };
+    });
 
     const completionRate = expectedScores > 0 ? Math.round((totalScoresSubmitted / expectedScores) * 100) : 0;
 
-    return NextResponse.json({
-      totalParticipants,
-      totalJudges,
-      totalCategories,
-      totalScoresSubmitted,
-      expectedScores,
-      completionRate,
-      categoryStats,
-    });
+    return NextResponse.json(
+      {
+        totalParticipants,
+        totalJudges,
+        totalCategories: categories.length,
+        totalScoresSubmitted,
+        expectedScores,
+        completionRate,
+        categoryStats,
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, max-age=0',
+        },
+      }
+    );
   } catch (error) {
     console.error('Admin dashboard error:', error);
     return NextResponse.json({ error: 'Terjadi kesalahan server' }, { status: 500 });

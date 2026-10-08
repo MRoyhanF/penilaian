@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useTheme } from '../context/ThemeContext';
 import { 
   Trophy, 
   Lock, 
@@ -9,12 +10,15 @@ import {
   Sparkles, 
   Languages, 
   ShieldCheck, 
-  UserCheck 
+  UserCheck,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 export default function LoginPage({ onLoginSuccess }) {
   const { login } = useAuth();
   const { lang, toggleLanguage, t } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
   
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -52,6 +56,26 @@ export default function LoginPage({ onLoginSuccess }) {
       <div className="login-header-controls">
         <button
           type="button"
+          className="theme-switch-btn"
+          onClick={toggleTheme}
+          title={theme === 'light' ? 'Beralih ke Dark Mode' : 'Beralih ke Light Mode'}
+          aria-label="Toggle Theme"
+        >
+          {theme === 'light' ? (
+            <>
+              <Moon size={16} className="theme-icon moon-icon" />
+              <span className="theme-label">Dark</span>
+            </>
+          ) : (
+            <>
+              <Sun size={16} className="theme-icon sun-icon" />
+              <span className="theme-label">Light</span>
+            </>
+          )}
+        </button>
+
+        <button
+          type="button"
           className="lang-switch-btn"
           onClick={toggleLanguage}
           title={t('switchLanguage')}
@@ -59,7 +83,7 @@ export default function LoginPage({ onLoginSuccess }) {
           <Languages size={17} className="lang-icon" />
           <span className="lang-badge active">{lang.toUpperCase()}</span>
           <span className="lang-toggle-indicator">
-            {lang === 'id' ? '🇮🇩 Bahasa' : '🇬🇧 English'}
+            {lang === 'id' ? 'ID' : 'EN'}
           </span>
         </button>
       </div>

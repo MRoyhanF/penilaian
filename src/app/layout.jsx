@@ -1,10 +1,11 @@
 import '../styles/index.css';
 import { AuthProvider } from '../context/AuthContext';
 import { LanguageProvider } from '../i18n/LanguageContext';
+import { ThemeProvider } from '../context/ThemeContext';
 
 export const metadata = {
   title: 'Sistem Penjurian Lomba',
-  description: 'Sistem Penjurian Lomba Modern & Real-time dengan Next.js dan Supabase',
+  description: 'Sistem Penjurian Lomba Modern, Cepat & Akurat dengan Next.js dan Supabase',
 };
 
 export default function RootLayout({ children }) {
@@ -19,11 +20,13 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body>
-        <LanguageProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </LanguageProvider>
+        <ThemeProvider>
+          <LanguageProvider>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </LanguageProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

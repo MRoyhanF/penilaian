@@ -1,6 +1,9 @@
+'use client';
+
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useTheme } from '../context/ThemeContext';
 import { 
   Trophy, 
   Languages, 
@@ -9,8 +12,9 @@ import {
   Menu, 
   X, 
   ShieldCheck, 
-  Award,
-  ChevronRight
+  ChevronRight,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 export default function Navbar({ 
@@ -22,6 +26,7 @@ export default function Navbar({
 }) {
   const { user, logout } = useAuth();
   const { lang, toggleLanguage, t } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
 
   const handleLogout = async () => {
     if (window.confirm(t('logoutConfirm'))) {
@@ -80,6 +85,27 @@ export default function Navbar({
       </div>
 
       <div className="navbar-right">
+        {/* Theme Switcher Button */}
+        <button
+          type="button"
+          className="theme-switch-btn"
+          onClick={toggleTheme}
+          title={theme === 'light' ? 'Beralih ke Dark Mode' : 'Beralih ke Light Mode'}
+          aria-label="Toggle Theme"
+        >
+          {theme === 'light' ? (
+            <>
+              <Moon size={17} className="theme-icon moon-icon" />
+              <span className="theme-label">Dark</span>
+            </>
+          ) : (
+            <>
+              <Sun size={17} className="theme-icon sun-icon" />
+              <span className="theme-label">Light</span>
+            </>
+          )}
+        </button>
+
         {/* Language Switcher Pill */}
         <button
           type="button"
@@ -90,7 +116,7 @@ export default function Navbar({
           <Languages size={17} className="lang-icon" />
           <span className="lang-badge active">{lang.toUpperCase()}</span>
           <span className="lang-toggle-indicator">
-            {lang === 'id' ? '🇮🇩 ID' : '🇬🇧 EN'}
+            {lang === 'id' ? 'ID' : 'EN'}
           </span>
         </button>
 

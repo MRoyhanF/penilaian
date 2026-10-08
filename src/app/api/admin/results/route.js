@@ -23,11 +23,18 @@ export async function GET(request) {
           orderBy: { number: 'asc' },
           include: {
             scores: {
-              include: {
-                judge: true,
+              select: {
+                judgeId: true,
+                score: true,
                 subCriteria: {
-                  include: {
-                    criteria: true,
+                  select: {
+                    criteria: {
+                      select: {
+                        id: true,
+                        weight: true,
+                        maxScore: true,
+                      },
+                    },
                   },
                 },
               },
@@ -36,7 +43,13 @@ export async function GET(request) {
         },
         judgeCategories: {
           include: {
-            judge: true,
+            judge: {
+              select: {
+                id: true,
+                name: true,
+                username: true,
+              },
+            },
           },
         },
       },
@@ -51,12 +64,8 @@ export async function GET(request) {
         username: jc.judge.username,
       }));
 
-      const results = [];
-
-      for (const p of cat.participants) {
-        const judgeScores = [];
-
-        for (const j of judges) {
+      const results = cat.participants.map((p) => {
+        const judgeScores = judges.map((j) => {
           const scores = p.scores.filter((s) => s.judgeId === j.id);
           const hasScored = scores.length > 0;
           let total = 0;
@@ -76,20 +85,20 @@ export async function GET(request) {
             }
           }
 
-          judgeScores.push({
+          return {
             judge_id: j.id,
             judge_name: j.name,
             total: Math.round(total * 100) / 100,
             has_scored: hasScored,
-          });
-        }
+          };
+        });
 
         const scored = judgeScores.filter((j) => j.has_scored);
         const avg = scored.length > 0
           ? Math.round((scored.reduce((s, j) => s + j.total, 0) / scored.length) * 100) / 100
           : 0;
 
-        results.push({
+        return {
           id: p.id,
           number: p.number,
           name: p.name,
@@ -99,8 +108,8 @@ export async function GET(request) {
           category_id: p.categoryId,
           judge_scores: judgeScores,
           average: avg,
-        });
-      }
+        };
+      });
 
       // Sort by average descending
       results.sort((a, b) => b.average - a.average);
@@ -118,7 +127,6 @@ export async function GET(request) {
       };
     }
 
-    // If single category requested and exists, return single object or map
     if (categoryCode && allResults[categoryCode]) {
       return NextResponse.json(allResults[categoryCode]);
     }
