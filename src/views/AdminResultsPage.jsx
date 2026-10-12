@@ -70,13 +70,17 @@ export default function AdminResultsPage({ initialCategoryCode, showToast }) {
   const handleExportCSV = () => {
     if (!currentCategoryData) return;
 
-    const headers = ['Peringkat', 'No Peserta', 'Nama Peserta', 'Sekolah', 'Judul Proyek', 'Skor Rata-rata'];
+    const headers = ['Peringkat', 'No Peserta', 'Nama Peserta', 'Sekolah', 'Judul Proyek'];
     
     // Add judge header names
     const judgesList = currentCategoryData.judges || [];
     judgesList.forEach(j => {
       headers.push(`Nilai (${j.name})`);
     });
+
+    // Add criteria total header names
+    headers.push('Total Idea & Creativity', 'Total Code & Design', 'Total Presentation');
+    headers.push('Skor Rata-rata');
 
     const rows = rawResults.map((r) => {
       const judgeMap = {};
@@ -90,12 +94,18 @@ export default function AdminResultsPage({ initialCategoryCode, showToast }) {
         `"${r.name.replace(/"/g, '""')}"`,
         `"${(r.school || '').replace(/"/g, '""')}"`,
         `"${(r.project || '').replace(/"/g, '""')}"`,
-        r.average
       ];
 
       judgesList.forEach(j => {
         row.push(judgeMap[j.id] !== undefined ? judgeMap[j.id] : '-');
       });
+
+      const critIdea = r.criteria_totals?.idea?.has_scored ? r.criteria_totals.idea.total : '-';
+      const critCode = r.criteria_totals?.code?.has_scored ? r.criteria_totals.code.total : '-';
+      const critPres = r.criteria_totals?.presentation?.has_scored ? r.criteria_totals.presentation.total : '-';
+      row.push(critIdea, critCode, critPres);
+
+      row.push(r.average);
 
       return row.join(',');
     });
@@ -275,6 +285,24 @@ export default function AdminResultsPage({ initialCategoryCode, showToast }) {
                       {j.name}
                     </th>
                   ))}
+                  <th style={{ textAlign: 'center', minWidth: '125px' }}>
+                    <div className="criteria-header-box">
+                      <span className="criteria-header-title">{t('colTotalIdea')}</span>
+                      <span className="criteria-header-badge badge-amber">Maks 100</span>
+                    </div>
+                  </th>
+                  <th style={{ textAlign: 'center', minWidth: '125px' }}>
+                    <div className="criteria-header-box">
+                      <span className="criteria-header-title">{t('colTotalCode')}</span>
+                      <span className="criteria-header-badge badge-blue">Maks 100</span>
+                    </div>
+                  </th>
+                  <th style={{ textAlign: 'center', minWidth: '125px' }}>
+                    <div className="criteria-header-box">
+                      <span className="criteria-header-title">{t('colTotalPresentation')}</span>
+                      <span className="criteria-header-badge badge-green">Maks 100</span>
+                    </div>
+                  </th>
                   <th style={{ textAlign: 'right', minWidth: '120px' }}>{t('colFinalAverage')}</th>
                 </tr>
               </thead>
@@ -328,6 +356,45 @@ export default function AdminResultsPage({ initialCategoryCode, showToast }) {
                           </td>
                         );
                       })}
+                      {/* Total Idea & Creativity */}
+                      <td style={{ textAlign: 'center' }}>
+                        {row.criteria_totals?.idea?.has_scored ? (
+                          <span 
+                            className="criteria-score-pill pill-amber"
+                            title={`Total ${row.criteria_totals.idea.sum_raw} poin sub-kriteria ÷ ${row.criteria_totals.idea.judges_count} juri = ${row.criteria_totals.idea.total}`}
+                          >
+                            {row.criteria_totals.idea.total}
+                          </span>
+                        ) : (
+                          <span className="score-pending-dash">-</span>
+                        )}
+                      </td>
+                      {/* Total Code & Design */}
+                      <td style={{ textAlign: 'center' }}>
+                        {row.criteria_totals?.code?.has_scored ? (
+                          <span 
+                            className="criteria-score-pill pill-blue"
+                            title={`Total ${row.criteria_totals.code.sum_raw} poin sub-kriteria ÷ ${row.criteria_totals.code.judges_count} juri = ${row.criteria_totals.code.total}`}
+                          >
+                            {row.criteria_totals.code.total}
+                          </span>
+                        ) : (
+                          <span className="score-pending-dash">-</span>
+                        )}
+                      </td>
+                      {/* Total Presentation */}
+                      <td style={{ textAlign: 'center' }}>
+                        {row.criteria_totals?.presentation?.has_scored ? (
+                          <span 
+                            className="criteria-score-pill pill-green"
+                            title={`Total ${row.criteria_totals.presentation.sum_raw} poin sub-kriteria ÷ ${row.criteria_totals.presentation.judges_count} juri = ${row.criteria_totals.presentation.total}`}
+                          >
+                            {row.criteria_totals.presentation.total}
+                          </span>
+                        ) : (
+                          <span className="score-pending-dash">-</span>
+                        )}
+                      </td>
                       <td style={{ textAlign: 'right' }}>
                         <span className={`table-avg-score ${row.average > 0 ? 'highlight-avg' : ''}`}>
                           {row.average > 0 ? row.average : '-'}

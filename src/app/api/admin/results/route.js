@@ -15,6 +15,17 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const categoryCode = searchParams.get('category');
 
+    const allCriteria = await prisma.criteria.findMany({
+      orderBy: { displayOrder: 'asc' },
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        weight: true,
+        maxScore: true,
+      },
+    });
+
     const categories = await prisma.category.findMany({
       where: categoryCode ? { code: categoryCode } : undefined,
       orderBy: { displayOrder: 'asc' },
@@ -31,6 +42,8 @@ export async function GET(request) {
                     criteria: {
                       select: {
                         id: true,
+                        code: true,
+                        name: true,
                         weight: true,
                         maxScore: true,
                       },
@@ -69,19 +82,32 @@ export async function GET(request) {
           const scores = p.scores.filter((s) => s.judgeId === j.id);
           const hasScored = scores.length > 0;
           let total = 0;
+          const criteriaBreakdown = {};
+
+          for (const crit of allCriteria) {
+            criteriaBreakdown[crit.code] = {
+              id: crit.id,
+              code: crit.code,
+              name: crit.name,
+              weight: crit.weight,
+              maxScore: crit.maxScore,
+              raw: 0,
+              weighted: 0,
+            };
+          }
 
           if (hasScored) {
-            const criteriaMap = {};
             for (const s of scores) {
               const crit = s.subCriteria.criteria;
-              if (!criteriaMap[crit.id]) {
-                criteriaMap[crit.id] = { raw: 0, weight: crit.weight, max: crit.maxScore };
+              if (crit && criteriaBreakdown[crit.code]) {
+                criteriaBreakdown[crit.code].raw += s.score;
               }
-              criteriaMap[crit.id].raw += s.score;
             }
 
-            for (const c of Object.values(criteriaMap)) {
-              total += (c.raw / c.max) * c.weight;
+            for (const critCode of Object.keys(criteriaBreakdown)) {
+              const cb = criteriaBreakdown[critCode];
+              cb.weighted = Math.round(((cb.raw / (cb.maxScore || 100)) * cb.weight) * 100) / 100;
+              total += cb.weighted;
             }
           }
 
@@ -90,6 +116,7 @@ export async function GET(request) {
             judge_name: j.name,
             total: Math.round(total * 100) / 100,
             has_scored: hasScored,
+            criteria_scores: criteriaBreakdown,
           };
         });
 
@@ -97,6 +124,37 @@ export async function GET(request) {
         const avg = scored.length > 0
           ? Math.round((scored.reduce((s, j) => s + j.total, 0) / scored.length) * 100) / 100
           : 0;
+
+        // Calculate criteria totals across scored judges:
+        // Jumlahkan seluruh poin sub-kriteria dari kedua juri (misal 4 + 4 = 8 sub-kriteria), lalu dibagi jumlah juri (dibagi 2)
+        const criteriaTotals = {};
+        for (const crit of allCriteria) {
+          let sumRaw = 0;
+
+          for (const js of scored) {
+            if (js.criteria_scores && js.criteria_scores[crit.code]) {
+              sumRaw += js.criteria_scores[crit.code].raw;
+            }
+          }
+
+          // Jumlah semua poin sub-kriteria dari seluruh juri dibagi jumlah juri yang menilai
+          const criteriaAvgScore = scored.length > 0
+            ? Math.round((sumRaw / scored.length) * 100) / 100
+            : 0;
+
+          criteriaTotals[crit.code] = {
+            id: crit.id,
+            code: crit.code,
+            name: crit.name,
+            weight: crit.weight,
+            maxScore: crit.maxScore,
+            total: criteriaAvgScore, // Total nilai kriteria (jumlah 8 sub-kriteria / 2)
+            sum_raw: sumRaw,        // Total akumulasi poin sub-kriteria (misal dari 8 sub-kriteria)
+            average: criteriaAvgScore,
+            judges_count: scored.length,
+            has_scored: scored.length > 0,
+          };
+        }
 
         return {
           id: p.id,
@@ -107,6 +165,7 @@ export async function GET(request) {
           project: p.project,
           category_id: p.categoryId,
           judge_scores: judgeScores,
+          criteria_totals: criteriaTotals,
           average: avg,
         };
       });
@@ -123,6 +182,7 @@ export async function GET(request) {
         name: cat.name,
         display_order: cat.displayOrder,
         judges,
+        criteria: allCriteria,
         results,
       };
     }

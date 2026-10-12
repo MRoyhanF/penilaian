@@ -557,29 +557,75 @@ app.get('/api/admin/results', async (req, res) => {
         const { data: scores } = await supabase.from('scores').select('score, sub_criteria_id').eq('judge_id', j.id).eq('participant_id', p.id);
         let total = 0;
         const hasScored = (scores || []).length > 0;
+        const criteriaBreakdown = {};
+
+        for (const crit of (criteria || [])) {
+          criteriaBreakdown[crit.code] = {
+            id: crit.id,
+            code: crit.code,
+            name: crit.name,
+            weight: crit.weight,
+            max_score: crit.max_score,
+            raw: 0,
+            weighted: 0,
+          };
+        }
+
         if (hasScored) {
           const subIds = scores.map(s => s.sub_criteria_id);
           const { data: subCriteria } = await supabase.from('sub_criteria').select('id, criteria_id').in('id', subIds);
-          const criteriaMap = {};
           for (const s of scores) {
             const sc = (subCriteria || []).find(sub => sub.id === s.sub_criteria_id);
             if (!sc) continue;
             const crit = (criteria || []).find(c => c.id === sc.criteria_id);
-            if (!crit) continue;
-            if (!criteriaMap[sc.criteria_id]) criteriaMap[sc.criteria_id] = { raw: 0, weight: crit.weight, max: crit.max_score };
-            criteriaMap[sc.criteria_id].raw += s.score;
+            if (!crit || !criteriaBreakdown[crit.code]) continue;
+            criteriaBreakdown[crit.code].raw += s.score;
           }
-          for (const c of Object.values(criteriaMap)) total += (c.raw / c.max) * c.weight;
+          for (const critCode of Object.keys(criteriaBreakdown)) {
+            const cb = criteriaBreakdown[critCode];
+            cb.weighted = Math.round(((cb.raw / (cb.max_score || 100)) * cb.weight) * 100) / 100;
+            total += cb.weighted;
+          }
         }
-        judgeScores.push({ judge_id: j.id, judge_name: j.name, total: Math.round(total * 100) / 100, has_scored: hasScored });
+        judgeScores.push({
+          judge_id: j.id,
+          judge_name: j.name,
+          total: Math.round(total * 100) / 100,
+          has_scored: hasScored,
+          criteria_scores: criteriaBreakdown,
+        });
       }
       const scored = judgeScores.filter(j => j.has_scored);
       const avg = scored.length > 0 ? Math.round((scored.reduce((s, j) => s + j.total, 0) / scored.length) * 100) / 100 : 0;
-      results.push({ ...p, judge_scores: judgeScores, average: avg });
+
+      const criteriaTotals = {};
+      for (const crit of (criteria || [])) {
+        let sumRaw = 0;
+        for (const js of scored) {
+          if (js.criteria_scores && js.criteria_scores[crit.code]) {
+            sumRaw += js.criteria_scores[crit.code].raw;
+          }
+        }
+        const criteriaAvgScore = scored.length > 0 ? Math.round((sumRaw / scored.length) * 100) / 100 : 0;
+        criteriaTotals[crit.code] = {
+          id: crit.id,
+          code: crit.code,
+          name: crit.name,
+          weight: crit.weight,
+          max_score: crit.max_score,
+          total: criteriaAvgScore,
+          sum_raw: sumRaw,
+          average: criteriaAvgScore,
+          judges_count: scored.length,
+          has_scored: scored.length > 0,
+        };
+      }
+
+      results.push({ ...p, judge_scores: judgeScores, criteria_totals: criteriaTotals, average: avg });
     }
     results.sort((a, b) => b.average - a.average);
     results.forEach((r, i) => { r.rank = r.average > 0 ? i + 1 : '-'; });
-    allResults[cat.code] = { ...cat, judges: judges || [], results };
+    allResults[cat.code] = { ...cat, judges: judges || [], criteria: criteria || [], results };
   }
 
   res.json(allResults);
